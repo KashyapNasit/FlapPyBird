@@ -1,10 +1,37 @@
 from itertools import cycle
 import random
 import sys
+import requests
+import json
+import threading
+import time
+import sys
 
 import pygame
 from pygame.locals import *
 
+
+username = "Kashyap"
+
+class myThread (threading.Thread):
+
+   url = "http://localhost:8000/gameData"
+   headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+   def __init__(self, data):
+      threading.Thread.__init__(self)
+      self.data = data
+   def run(self):
+    #   print ("Starting ")
+      payload = json.dumps(self.data)
+      response = requests.post(self.url, data = payload, headers=self.headers)
+      if(response.status_code != 200):
+        print(self.data)
+        print(response.status_code)
+        print(payload)
+    #   print ("Exiting ")
 
 FPS = 30
 SCREENWIDTH  = 288
@@ -54,6 +81,8 @@ try:
 except NameError:
     xrange = range
 
+def send_data():
+    print("Hello")
 
 def main():
     global SCREEN, FPSCLOCK
@@ -224,6 +253,8 @@ def mainGame(movementInfo):
     playerFlapAcc =  -9   # players speed on flapping
     playerFlapped = False # True when player flaps
 
+    game_id = time.time()
+    scoreChanged = False
 
     while True:
         for event in pygame.event.get():
@@ -239,6 +270,7 @@ def mainGame(movementInfo):
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
                                upperPipes, lowerPipes)
+
         if crashTest[0]:
             return {
                 'y': playery,
@@ -252,13 +284,14 @@ def mainGame(movementInfo):
             }
 
         # check for score
-        playerMidPos = playerx + IMAGES['player'][0].get_width() / 2
+        playerMidPos = playerx + IMAGES['player'][0].get_width()
         for pipe in upperPipes:
-            pipeMidPos = pipe['x'] + IMAGES['pipe'][0].get_width() / 2
+            pipeMidPos = pipe['x'] + IMAGES['pipe'][0].get_width() + 10
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                 score += 1
+                scoreChanged = True
                 SOUNDS['point'].play()
-
+        
         # playerIndex basex change
         if (loopIter + 1) % 3 == 0:
             playerIndex = next(playerIndexGen)
@@ -272,7 +305,51 @@ def mainGame(movementInfo):
         # player's movement
         if playerVelY < playerMaxVelY and not playerFlapped:
             playerVelY += playerAccY
+
         if playerFlapped:
+            try:
+                if(crashTest[0]):
+                    isCrashed="true"
+                else:
+                    isCrashed="false"
+
+                payload = {
+                        "userName": username,
+                        "recordId": time.time(),
+                        "gameId": game_id,
+                        "playerCoordinateX": playerx,
+                        "playerCoordinateY": playery,
+                        "playerRotation": playerRot,
+                        "playerVelY": playerVelY,
+                        "score": score,
+                        "didFlapped":playerFlapped,
+                        "lowerPipes":[{
+                            "xCoordinate": lowerPipes[0]['x'],
+                            "yCoordinate": lowerPipes[0]['y'],
+                        },
+                        {
+                            "xCoordinate": lowerPipes[1]['x'],
+                            "yCoordinate": lowerPipes[1]['y'],
+                        }],
+                        "upperPipes":[{
+                            "xCoordinate": upperPipes[0]['x'],
+                            "yCoordinate": upperPipes[0]['y'],
+                        },
+                        {
+                            "xCoordinate": upperPipes[1]['x'],
+                            "yCoordinate": upperPipes[1]['y'],
+                        }],
+                        "isCrashed":isCrashed,
+                        "scoreChanged": scoreChanged,
+                    }
+                # print(payload)
+                thread2 = myThread(payload)
+                ############# Event Sending #############
+                thread2.start()
+                scoreChanged = False
+            except:
+                print ("Error: unable to start thread")
+
             playerFlapped = False
 
             # more rotation to cover the threshold (calculated in visible rotation)
@@ -281,6 +358,7 @@ def mainGame(movementInfo):
         playerHeight = IMAGES['player'][playerIndex].get_height()
         playery += min(playerVelY, BASEY - playery - playerHeight)
 
+        
         # move pipes to left
         for uPipe, lPipe in zip(upperPipes, lowerPipes):
             uPipe['x'] += pipeVelX
@@ -291,6 +369,7 @@ def mainGame(movementInfo):
             newPipe = getRandomPipe()
             upperPipes.append(newPipe[0])
             lowerPipes.append(newPipe[1])
+
 
         # remove first pipe if its out of the screen
         if len(upperPipes) > 0 and upperPipes[0]['x'] < -IMAGES['pipe'][0].get_width():
@@ -310,7 +389,7 @@ def mainGame(movementInfo):
 
         # Player rotation has a threshold
         visibleRot = playerRotThr
-        if playerRot <= playerRotThr:
+        if playerRot <= playerRotThr: #20
             visibleRot = playerRot
         
         playerSurface = pygame.transform.rotate(IMAGES['player'][playerIndex], visibleRot)
@@ -484,4 +563,6 @@ def getHitmask(image):
     return mask
 
 if __name__ == '__main__':
+    if(len(sys.argv)>0):
+        username = sys.argv[1]
     main()
