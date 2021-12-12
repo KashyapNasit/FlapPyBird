@@ -3,14 +3,16 @@ FlapPyBird
 
 A Flappy Bird Clone made using [python-pygame][pygame]
 
-How-to (as tested on MacOS)
+Setup (as tested on MacOS)
 ---------------------------
 
-1. Install Python 3.x (recommended) 2.x from [here](https://www.python.org/download/releases/)
+1. Install Python 3.x (recommended) 2.x from [here](https://www.python.org/download/releases/) (Or use your preffered package manager)
 
 1. Install [pipenv]
 
-1. Install PyGame 1.9.x from [here](http://www.pygame.org/download.shtml)
+1. _Optional_: Install PyGame 1.9.x from [here](http://www.pygame.org/download.shtml)
+
+   On MacOS, pipenv will install PyGame, please check how to install on your Linux/Windows machines
 
 1. Clone the repository:
 
@@ -42,10 +44,12 @@ Notable forks
 Made something awesome from FlapPyBird? Add it to the list :)
 
 
-ScreenShot
+Demo
 ----------
 
-![Flappy Bird](screenshot1.png)
+https://user-images.githubusercontent.com/2307626/130682424-9254b32d-efe0-406e-a6ea-3fb625a2df5e.mp4
+
+
 
 [pygame]: http://www.pygame.org
 [pipenv]: https://pipenv.readthedocs.io/en/latest/
